@@ -32,6 +32,13 @@ dependencies:
 - text
 - hlib
 - transformers
+- filepath
+- unix-compat
+- wai-middleware-static
+- users
+- unordered-containers
+- base64-bytestring
+- bytestring
 
 library:
   source-dirs: src

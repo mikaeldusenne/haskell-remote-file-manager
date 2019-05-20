@@ -18,8 +18,9 @@ alertWarning = alertBootstrap "warning"
 alertDanger = alertBootstrap "danger"
 alertSecondary = alertBootstrap "secondary"
 
+css hrf = link ! rel "stylesheet" ! type_ "text/css" ! href hrf
 
-bootstrapCss = link ! rel "stylesheet" ! type_ "text/css" ! href "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+bootstrapCss = css "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
 
 js srcurl = script ! src srcurl $ mempty
 
@@ -34,3 +35,7 @@ column5 = H.div ! class_ ("col-md-5")
 column6 = H.div ! class_ ("col-md-6")
 column7 = H.div ! class_ ("col-md-7")
 column8 = H.div ! class_ ("col-md-8")
+column9 = H.div ! class_ ("col-md-9")
+column10 = H.div ! class_ ("col-md-10")
+column11 = H.div ! class_ ("col-md-11")
+column12 = H.div ! class_ ("col-md-12")

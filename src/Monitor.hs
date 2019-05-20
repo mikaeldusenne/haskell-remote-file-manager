@@ -16,10 +16,11 @@ round2 :: (RealFrac a) => a -> a
 round2 = (/100.0) . fromIntegral . round . (*100)
 
 monitor :: Space -> Double -> Html
-monitor (Space{avail=a, used=u}) pct = HB.row $ do
+monitor (Space{avail=a, used=u}) pct =  do
   let alertTypePct | pct < 10 = alertWarning
                    | pct > 10 = alertSuccess
-      f alrt k = column8 . alrt $ k
+      f alrt k = H.span ! class_ "navbar-text navbar-dark" $ k -- column12 .
+
   
   -- HB.row $ alertTypePct "ok!"
   f alertTypePct (H.toHtml $ "Available space: " <> prettyBytes a <> " / " <> prettyBytes (a+u) <> " ( " <> show (round2 pct) <> "% )")
