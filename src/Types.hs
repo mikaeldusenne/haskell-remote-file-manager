@@ -23,7 +23,7 @@ data FileDetail = FileDetail {
   size :: FileSize,
   filetype :: FileType
   }
-  deriving(Show)
+  deriving(Show, Generic)
 
 data UploadProgress = UplPrg { data_ :: String }
   deriving(Show, Generic)
@@ -33,4 +33,29 @@ instance ToJSON UploadProgress where
 
     -- For efficiency, we write a simple toEncoding implementation, as
     -- the default version uses toJSON.
+    toEncoding = genericToEncoding defaultOptions
+
+
+
+
+data Data = Data {
+  space :: Space,
+  files :: [FileDetail]
+  }
+  deriving(Show, Generic)
+
+instance ToJSON Space where
+  toJSON p = Data.Aeson.object [
+    "used" .= used p,
+    "avail"  .= avail  p ]
+
+instance ToJSON FileType where
+  toJSON p = Data.Aeson.object [
+    "type" .= show p]
+
+instance ToJSON FileDetail where
+    toEncoding = genericToEncoding defaultOptions
+
+
+instance ToJSON Data where
     toEncoding = genericToEncoding defaultOptions

@@ -5,6 +5,16 @@ function toggle_visibility_upload(){
 	$( '#div-input-file' ).toggle();
 }
 
+function newfolder_show(){
+	$( '#li-new-folder' ).show();
+}
+
+function createFolder(){
+	var fieldVal = $("#new-folder-field").val();
+	console.log(fieldVal);
+	
+}
+
 function updateFileUploadPath(){
 	var fieldVal = $("#file-upload-field").val();
 	

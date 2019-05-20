@@ -31,7 +31,7 @@ import HtmlWebsite
 import Hunix
 import List
 import Params
-import Uploader
+import ActionBar
 import FileManager
 import qualified Monitor 
 import Types as T
@@ -49,31 +49,51 @@ type Server a = SpockM () () () a
 genToken :: IO [Char]
 genToken = return "42"
 
+
+csss = do
+  bootstrapCss
+  mapM css [
+    "//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.css",
+    "css/style.css",
+    "open-iconic/font/css/open-iconic-bootstrap.css"]
+
+jss = do
+  jquery
+  bootstrapJs
+  mapM js [
+    "https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.10/vue.js",
+    "http://unpkg.com/portal-vue",
+    "//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/vue-resource/1.5.1/vue-resource.min.js",
+    "js/script.js"]
+  uploaderjs
+  script $ "document.addEventListener('DOMContentLoaded', init)"
+
+
 -- webpage :: [p] -> Html
 -- webpage :: Foldable t => t a -> Html
 -- webpage :: (Foldable t, ToMarkup a) => t a -> Html
 webpage :: PageContent -> Html
 webpage pc = docTypeHtml $ do
   H.head $ do
-    bootstrapCss
-    css "css/style.css"
-    H.title "Hello"
+    csss
+    H.title ""
   body ! A.style "padding-top: 70px;" $ do
-    nav ! class_ "navbar navbar-dark bg-primary fixed-top " $ do
-      -- H.div ! class_ "container" $ do
-      T.monitor pc
-      T.currentPath pc
-      uploader
-    H.div ! class_ "container" $ do
-      -- hr
-      -- HB.row $
-        -- column12 $
-      T.details pc
-    jquery
-    bootstrapJs
-    uploaderjs
+    H.div ! A.id "app" $ do
+      nav ! class_ "navbar navbar-dark bg-primary fixed-top " $ do
+        -- H.div ! class_ "container" $ do
+        T.monitor pc
+        T.currentPath pc
+        actionbar
+         
+         
+      H.div ! class_ "container" $ do
+        -- hr
+        -- HB.row $
+          -- column12 $
+        T.details pc
+    jss
     script $ toHtml $ "var token='" <> token pc <> "';"
-    script $ "document.addEventListener('DOMContentLoaded', init)"
 
     
 
@@ -128,6 +148,18 @@ app = do
                  print $ ddd
                  print $ "ERROR     " ++ error ++ "     ERROR"
     W.json $ UplPrg "ok data received"
+  get "api/all" $ do
+    path <- (\case
+            Just ee -> securePath ee
+            Nothing -> ""
+        ) <$> W.param "path"
+    fs <- liftIO $ FileManager.listFiles path
+    spc <- liftIO free
+    W.json $ Data {
+      space = spc,
+      T.files = fs
+      }
+    
 
 
 main :: IO ()

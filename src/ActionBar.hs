@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings, LambdaCase #-}
-module Uploader where
+module ActionBar where
 
 import Web.Spock hiding (body)
 import qualified Web.Spock as W
@@ -26,8 +26,6 @@ import Types as T
 import System.FilePath.Posix
 import HtmlWebsite
 
-elemt e st cl = e ! A.style st ! class_ cl
-div' = elemt H.div ""
 
 -- uploader :: Html
 -- uploader = do -- H.div ! class_ "row" $ do
@@ -64,15 +62,16 @@ div' = elemt H.div ""
 --   script ! src "js/uploader.js" $ mempty
 
 
-uploader :: Html
-uploader = do -- H.div ! class_ "row" $ do
+actionbar :: Html
+actionbar = do -- H.div ! class_ "row" $ do
   -- H.span ! class_ "navbar-text" ! A.id "upload-progress" $ do
   --   "Please select a file and click \"Upload\"."
-  -- H.form ! class_ "form-inline" $ do
-  H.div $ do
+  --
+  H.form ! class_ "form-inline mb-1" $ do
+  --div' "row" $ do
     H.span ! class_ "navbar-text" ! A.id "upload-progress" $ do
       "Please select a file and click \"Upload\"."
-    H.div ! A.id "div-input-file" ! class_ "input-group mb-1" $ do
+    H.div ! A.id "div-input-file" ! class_ "input-group " $ do
       div' "custom-file" $ do
         input ! class_ "custom-file-input" ! A.style "color:#eee;"
           ! A.id "file-upload-field" ! name "file_upload" ! type_ "file" 
@@ -80,7 +79,9 @@ uploader = do -- H.div ! class_ "row" $ do
       div' "input-group-append" $ 
         -- button ! class_ "form-control btn-sm btn btn-outline-secondary"! A.id "file-upload-submit" ! type_ "submit" ! class_ "btn btn-secondary mb-2" $ "Upload"
         H.span ! class_ "input-group-text"! A.id "file-upload-submit" $ "Upload"
-
+    button ! class_ "btn btn-secondary mx-1" ! A.onclick "newfolder_show()" $
+      iconic "folder"
+      -- img ! src "open-iconic/svg/data-transfer-upload.svg"
         
     -- H.label ! for "filepath" ! class_ "sr-only" $ "File"
     -- H.div ! class_ "from-group" $ do

@@ -17,13 +17,8 @@ round2 = (/100.0) . fromIntegral . round . (*100)
 
 monitor :: Space -> Double -> Html
 monitor (Space{avail=a, used=u}) pct =  do
-  let alertTypePct | pct < 10 = alertWarning
-                   | pct > 10 = alertSuccess
-      f alrt k = H.span ! class_ "navbar-text navbar-dark" $ k -- column12 .
-
-  
-  -- HB.row $ alertTypePct "ok!"
-  f alertTypePct (H.toHtml $ "Available space: " <> prettyBytes a <> " / " <> prettyBytes (a+u) <> " ( " <> show (round2 pct) <> "% )")
+  H.span ! class_ "navbar-text navbar-dark" $
+    "Available space: {{prettyBytes(deviceSpaceInfo.avail)}} / {{prettyBytes(deviceSpaceInfo.used + deviceSpaceInfo.avail)}}"
   -- round2 pct
   -- let a' = (++"GB") . show . round . (/(1024*1024)) $ fromIntegral a
   -- f alertSecondary "available" $ prettyBytes a

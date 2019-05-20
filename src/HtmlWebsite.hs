@@ -10,6 +10,12 @@ import Text.Blaze.Html5.Attributes as A
 import qualified Data.Text.Lazy as L
 import qualified Text.Blaze.Bootstrap as HB
 
+
+elemt e st cl = e ! A.style st ! class_ cl
+div' = elemt H.div ""
+
+
+
 alertBootstrap :: AttributeValue -> Html -> Html
 alertBootstrap which = H.div H.! class_ ("alert alert-" <> which) H.! role "alert"
 
@@ -17,6 +23,8 @@ alertSuccess = alertBootstrap "success"
 alertWarning = alertBootstrap "warning"
 alertDanger = alertBootstrap "danger"
 alertSecondary = alertBootstrap "secondary"
+
+iconic which = H.span ! class_ ("oi oi-" <> which) ! H.dataAttribute "glyph" which ! A.title which ! customAttribute  "aria-hidden" "true" $ mempty 
 
 css hrf = link ! rel "stylesheet" ! type_ "text/css" ! href hrf
 
