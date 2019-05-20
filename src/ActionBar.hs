@@ -67,18 +67,19 @@ actionbar = do -- H.div ! class_ "row" $ do
   -- H.span ! class_ "navbar-text" ! A.id "upload-progress" $ do
   --   "Please select a file and click \"Upload\"."
   --
-  H.form ! class_ "form-inline mb-1" $ do
-  --div' "row" $ do
-    H.span ! class_ "navbar-text" ! A.id "upload-progress" $ do
-      "Please select a file and click \"Upload\"."
-    H.div ! A.id "div-input-file" ! class_ "input-group " $ do
+  H.form ! class_ "form-inline mb-1" ! method "POST" ! ca "onsubmit" "return start_upload();" $ do
+  -- div' "row" $ do
+    H.span ! customAttribute "v-if" "show_progress_upload" ! class_ "navbar-text" ! A.id "upload-progress" $ do
+      "{{upload_status}}"
+    H.div ! customAttribute "v-if" "! show_progress_upload" ! A.id "div-input-file" ! class_ "input-group " $ do
       div' "custom-file" $ do
-        input ! class_ "custom-file-input" ! A.style "color:#eee;"
+        input ! vchange "set_upload_file($event)" ! class_ "custom-file-input" ! A.style "color:#eee;"
           ! A.id "file-upload-field" ! name "file_upload" ! type_ "file" 
         H.label ! class_ "custom-file-label" ! A.for "file-upload-field" $ "Choose a file"
       div' "input-group-append" $ 
         -- button ! class_ "form-control btn-sm btn btn-outline-secondary"! A.id "file-upload-submit" ! type_ "submit" ! class_ "btn btn-secondary mb-2" $ "Upload"
-        H.span ! class_ "input-group-text"! A.id "file-upload-submit" $ "Upload"
+        -- H.span ! class_ "input-group-text"! A.id "file-upload-submit" $ "Upload"
+        H.span ! class_ "input-group-text"! customAttribute "v-on:click" "start_upload()" $ "Upload"
     button ! class_ "btn btn-secondary mx-1" ! A.onclick "newfolder_show()" $
       iconic "folder"
       -- img ! src "open-iconic/svg/data-transfer-upload.svg"

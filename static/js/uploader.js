@@ -53,14 +53,9 @@ function init(){
     }
     $( '#file-upload-submit' ).on( 'click', start_upload );
 
-    function upload_file( start ) {
-		if(start === 0){
-			toggle_visibility_upload();
-		}
-		var next_slice = start + slice_size + 1;
-		var blob = file.slice( start, next_slice );
-		reader.onloadend = function( event ) {
-			// console.log("onloadevent");
+
+	var upload_chunk = function( event ) {
+			console.log("onloadevent");
 			d = {
 				action: 'dbi_upload_file',
 				file_data: event.target.result,
@@ -68,7 +63,7 @@ function init(){
 				file_type: file.type,
 				nonce: token
 			};
-			// console.log(d);
+			console.log(d);
 			if ( event.target.readyState !== FileReader.DONE ) {
 				return;
 			}
@@ -76,8 +71,15 @@ function init(){
 				url: 'fileupload',
 				type: 'POST',
 				dataType: 'json',
+				// contentType: "application/json; charset=utf-8",
+				// contentType: "x-www-form-urlencoded",
 				cache: false,
 				data: d,
+				// beforeSend: function(x) {
+				// 	if (x && x.overrideMimeType) {
+				// 		x.overrideMimeType("application/json;charset=UTF-8");
+				// 	}
+				// },
 				error: function( jqXHR, textStatus, errorThrown ) {
 					console.log("ajax upload error");
 					console.log( jqXHR, textStatus, errorThrown );
@@ -99,8 +101,17 @@ function init(){
 					}
 				}
 			} );
-		};
+	};
+	
+    function upload_file( start ) {
+		if(start === 0){
+			toggle_visibility_upload();
+		}
+		var next_slice = start + slice_size + 1;
+		var blob = file.slice( start, next_slice );
+		reader.onloadend = upload_chunk;
 		reader.readAsDataURL( blob );
     }
 
 })( jQuery );
+// 

@@ -36,12 +36,16 @@ inputNewFolder = do
       H.span ! class_ "input-group-text"! A.id "new-folder-submit" ! A.onclick "createFolder()" $ "Create"
 
 
-
 detailsfs :: [T.FileDetail] -> FilePath -> Html
 detailsfs l origin = HB.row $
                      ul ! A.style "width:100%;" ! class_ "list-group" $ do
   lii "list-group-item" ! A.id "li-new-folder" $ inputNewFolder
-  mapM_ f $ l
+  -- mapM_ f $ l
+  
+  li `vfor` "file in filelist" ! class_ "list-group-item" $ do
+    H.a ! href "#" ! ca "v-on:click" "fileAction(file)" $ "{{file.path}}"
+
+  
   where lii cl = li ! class_ (cl<>" d-flex justify-content-between align-items-center")
         dispForD e = (if T.filetype e == File
                        then ("list-group-item", "")

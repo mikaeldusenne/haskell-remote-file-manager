@@ -14,6 +14,16 @@ import qualified Text.Blaze.Bootstrap as HB
 elemt e st cl = e ! A.style st ! class_ cl
 div' = elemt H.div ""
 
+vfor  e s      = e ! customAttribute "v-for" s
+vbind  e s      = e ! customAttribute "v-bind" s
+vchange      = customAttribute "@change"
+vif = customAttribute "v-if"
+
+vifelse :: AttributeValue -> Html -> Html -> Html
+vifelse cond a b = do
+  a ! vif cond
+  b ! vif ("!"<>cond)
+ca = customAttribute
 
 
 alertBootstrap :: AttributeValue -> Html -> Html

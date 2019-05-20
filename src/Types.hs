@@ -25,14 +25,23 @@ data FileDetail = FileDetail {
   }
   deriving(Show, Generic)
 
+data UploadFile = UPLD {
+  file_data :: String,
+  file :: String,
+  file_type :: String,
+  first_chunk :: Bool
+  }
+  deriving (Show, Generic)
+
+instance ToJSON UploadFile where
+    toEncoding = genericToEncoding defaultOptions
+
+instance FromJSON UploadFile
+
 data UploadProgress = UplPrg { data_ :: String }
   deriving(Show, Generic)
 
 instance ToJSON UploadProgress where
-    -- No need to provide a toJSON implementation.
-
-    -- For efficiency, we write a simple toEncoding implementation, as
-    -- the default version uses toJSON.
     toEncoding = genericToEncoding defaultOptions
 
 
@@ -40,7 +49,8 @@ instance ToJSON UploadProgress where
 
 data Data = Data {
   space :: Space,
-  files :: [FileDetail]
+  files :: [FileDetail],
+  datapath :: String
   }
   deriving(Show, Generic)
 

@@ -55,7 +55,8 @@ csss = do
   mapM css [
     "//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.css",
     "css/style.css",
-    "open-iconic/font/css/open-iconic-bootstrap.css"]
+    "open-iconic/font/css/open-iconic-bootstrap.css"
+    ]
 
 jss = do
   jquery
@@ -82,8 +83,14 @@ webpage pc = docTypeHtml $ do
     H.div ! A.id "app" $ do
       nav ! class_ "navbar navbar-dark bg-primary fixed-top " $ do
         -- H.div ! class_ "container" $ do
-        T.monitor pc
-        T.currentPath pc
+        vifelse "refreshing"
+          (div' "" "")
+          ( do
+              T.monitor pc
+              T.currentPath pc
+          )
+        
+        
         actionbar
          
          
@@ -91,7 +98,7 @@ webpage pc = docTypeHtml $ do
         -- hr
         -- HB.row $
           -- column12 $
-        T.details pc
+        T.details pc ! vif "! refreshing"
     jss
     script $ toHtml $ "var token='" <> token pc <> "';"
 
@@ -122,28 +129,39 @@ app = do
           let fullpath = directory </> path
           isfile <- liftIO $ (isRegularFile <$> getFileStatus fullpath)
           if isfile
-            then file "" fullpath
+            then W.file "" fullpath
             else do
             fileListing <- (`detailsfs`path) <$> liftIO (FileManager.listFiles path)
             let pct = pcent spc
             let pc = T.PageContent{
                   monitor       = Monitor.monitor spc pct,
                   T.details     = fileListing,
-                  T.currentPath = H.span ! class_ "navbar-text" $ toHtml $ f ("/" ++ path),
+                  T.currentPath = H.span ! class_ "navbar-text" $ "/ {{addpathspaces(currentPath)}}",
                   token         = token}
-                  where f s = "/ " ++ (concatWith " / " $ splitOn (=='/') s)
+                  -- where f s = "/ " ++ (concatWith " / " $ splitOn (=='/') s)
   
             W.html . L.toStrict . R.renderHtml $ webpage $ pc
     action
   post ("/fileupload") $ do
     liftIO $ print "upload"
-
-    filename <- W.param' "file"
+    -- W.param' "test" >>= liftIO . putStrLn
+    -- W. >>= liftIO . print
+    e <- jsonBody'
+    liftIO $ print $ ("@@@@@@@@", T.file e, first_chunk e)
+    
+    -- W.files >>= liftIO . print
+    -- W.body >>= liftIO . print
+    -- W.paramsPost >>= liftIO . print
+    -- W.paramsGet >>= liftIO . print
+    -- W.params >>= liftIO . print
+    -- filename <- W.param' "file"
     -- liftIO $ print $ filename
 
-    ddd <- tail . dropWhile (/=',') <$> (W.param' "file_data" :: AppAction () String)
+    -- ddd <- tail . dropWhile (/=',') <$> (W.param' "file_data" :: AppAction () String)
+    let ddd = tail . dropWhile (/=',') $ file_data e
     let dd = BS64.decode . BSC8.pack $ ddd
-    case dd of Right d -> liftIO $ BS.appendFile (directory </> filename) d
+        mode = if first_chunk e then BS.writeFile else BS.appendFile
+    case dd of Right d -> liftIO $ mode (directory </> T.file e) d
                Left error -> liftIO $ do
                  print $ ddd
                  print $ "ERROR     " ++ error ++ "     ERROR"
@@ -153,11 +171,13 @@ app = do
             Just ee -> securePath ee
             Nothing -> ""
         ) <$> W.param "path"
+    liftIO $ print $ "api call path <" <> path <> ">"
     fs <- liftIO $ FileManager.listFiles path
     spc <- liftIO free
     W.json $ Data {
-      space = spc,
-      T.files = fs
+      space    = spc,
+      T.files  = fs,
+      datapath = path
       }
     
 
