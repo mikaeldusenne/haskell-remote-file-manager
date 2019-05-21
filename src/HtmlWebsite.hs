@@ -18,6 +18,8 @@ vfor  e s      = e ! customAttribute "v-for" s
 vbind  e s      = e ! customAttribute "v-bind" s
 vchange      = customAttribute "@change"
 vif = customAttribute "v-if"
+vclick = customAttribute "v-on:click"
+vmodel = customAttribute "v-model"
 
 vifelse :: AttributeValue -> Html -> Html -> Html
 vifelse cond a b = do

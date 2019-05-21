@@ -34,7 +34,10 @@
 		file_to_upload: null,
 		upload_status: '',
 		show_progress_upload: false,
-		refreshing: true
+		refreshing: true,
+
+		show_new_folder: false,
+		new_folder_name: ""
 
 	};
 	
@@ -108,16 +111,18 @@
 	
 	function start_upload() {
 		event.preventDefault();
+		var file = self.data.file_to_upload;
 
-		console.log("starting the upload of ");
-		console.log(self);
+		if(file === null) return;
+
+		console.log("starting the upload of:");
+		console.log(file);
 		
 		Vue.set(self.data, 'show_progress_upload', true);
 		
 		var reader = new FileReader();
 		var slice_size = 1000 * 1024 ;
 
-		var file = self.data.file_to_upload;
 
 		// $( '#file-upload-submit' ).on( 'click', start_upload );
 		var f_upload_progress = function( data ) {
@@ -146,7 +151,7 @@
 			};
 			// d = file;
 			console.log(d);
-			Vue.http.post('fileupload',
+			Vue.http.post('api/fileupload',
 						  body=d,
 						  timeout=0,
 						  emulateJSON=false,
@@ -213,6 +218,21 @@
 					'_blank'
 				);
 			}
+		},
+		createFolder: function(){
+			name = mkfullpath( self.data.new_folder_name );
+			Vue.http.post('api/newfolder', {folderpath: name})
+				.then(
+					function(success){
+						console.log("folder created");
+						self.update();
+						Vue.set(self.data, 'show_new_folder', false);
+						Vue.set(self.data, 'new_folder_name', "");
+					},
+					function(error){
+						console.log("error creating folder");
+						console.log(error);
+					});
 		},
 		mkfullpath: mkfullpath,
 		set_upload_file: set_upload_file,

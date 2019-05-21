@@ -80,7 +80,7 @@ actionbar = do -- H.div ! class_ "row" $ do
         -- button ! class_ "form-control btn-sm btn btn-outline-secondary"! A.id "file-upload-submit" ! type_ "submit" ! class_ "btn btn-secondary mb-2" $ "Upload"
         -- H.span ! class_ "input-group-text"! A.id "file-upload-submit" $ "Upload"
         H.span ! class_ "input-group-text"! customAttribute "v-on:click" "start_upload()" $ "Upload"
-    button ! class_ "btn btn-secondary mx-1" ! A.onclick "newfolder_show()" $
+    div' "btn btn-secondary mx-1" ! vclick "show_new_folder = ! show_new_folder" $
       iconic "folder"
       -- img ! src "open-iconic/svg/data-transfer-upload.svg"
         

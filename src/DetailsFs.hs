@@ -31,15 +31,16 @@ inputNewFolder = do
     div' "input-group-prepend" $
       H.span ! class_ "input-group-text" $ iconic "folder"
     input ! class_ "form-control" ! placeholder "Enter name here" 
-      ! A.id "new-folder-field" ! name "new_folder" ! type_ "text" 
+      ! A.id "new-folder-field" ! name "new_folder" ! type_ "text" ! vmodel "new_folder_name"
     div' "input-group-append" $ 
-      H.span ! class_ "input-group-text"! A.id "new-folder-submit" ! A.onclick "createFolder()" $ "Create"
+      H.span ! class_ "input-group-text"! A.id "new-folder-submit" ! vclick "createFolder()" $ "Create"
+
 
 
 detailsfs :: [T.FileDetail] -> FilePath -> Html
 detailsfs l origin = HB.row $
                      ul ! A.style "width:100%;" ! class_ "list-group" $ do
-  lii "list-group-item" ! A.id "li-new-folder" $ inputNewFolder
+  lii "list-group-item" ! A.id "li-new-folder" ! vif "show_new_folder" $ inputNewFolder
   -- mapM_ f $ l
   
   li `vfor` "file in filelist" ! class_ "list-group-item" $ do
@@ -47,22 +48,22 @@ detailsfs l origin = HB.row $
 
   
   where lii cl = li ! class_ (cl<>" d-flex justify-content-between align-items-center")
-        dispForD e = (if T.filetype e == File
+        dispForD e = (if _filetype e == File
                        then ("list-group-item", "")
                        else ("list-group-item list-group-item-info", "/"))
-        mkhref e = (toValue $ "?path=" <> (if (T.path e) == ".."
+        mkhref e = (toValue $ "?path=" <> (if (_path e) == ".."
                                            then joinPath . init . splitPath $ origin
-                                           else origin </> (T.path e)))
+                                           else origin </> (_path e)))
         f :: T.FileDetail -> Html
         f e = do
           let (cl, suff) = dispForD e
           lii cl $ do
             (H.a ! href (mkhref e)) . toHtml .
               (++suff) 
-              $ T.path e
+              $ _path e
             H.div ! class_ "d-flex flex-row-reverse" $ do
               H.span ! class_ "badge badge-primary badge-pill" $ toHtml $
-                prettyBytes $ (T.size e `Prelude.div` 1)
-              if T.filetype e == File then mempty else H.span ! class_ "badge badge-secondary" $ do
+                prettyBytes $ (_size e `Prelude.div` 1)
+              if _filetype e == File then mempty else H.span ! class_ "badge badge-secondary" $ do
               -- H.span ! class_ "glyphicon glyphicon-download" $ ""
                 H.text "zip"

@@ -39,6 +39,8 @@ dependencies:
 - unordered-containers
 - base64-bytestring
 - bytestring
+- directory
+- lens
 
 library:
   source-dirs: src
