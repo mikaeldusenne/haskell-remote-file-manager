@@ -25,6 +25,7 @@ import qualified Monitor
 import Types as T
 import System.FilePath.Posix
 import HtmlWebsite
+import Control.Monad (when)
 
 inputNewFolder = do
   H.div ! A.id "div-new-folder" ! class_ "input-group " $ do
@@ -42,7 +43,9 @@ detailsfs l origin = HB.row $
                      ul ! A.style "width:100%;" ! class_ "list-group" $ do
   lii "list-group-item" ! A.id "li-new-folder" ! vif "show_new_folder" $ inputNewFolder
   -- mapM_ f $ l
-  
+  li ! vif "currentPath.length > 0" ! class_ "list-group-item" $ do
+    H.a ! href "#" ! ca "v-on:click" "previousPath()" $ ".."
+
   li `vfor` "file in filelist" ! class_ "list-group-item" $ do
     H.a ! href "#" ! ca "v-on:click" "fileAction(file)" $ "{{file.path}}"
 
@@ -52,7 +55,7 @@ detailsfs l origin = HB.row $
                        then ("list-group-item", "")
                        else ("list-group-item list-group-item-info", "/"))
         mkhref e = (toValue $ "?path=" <> (if (_path e) == ".."
-                                           then joinPath . init . splitPath $ origin
+                                           then dirname origin
                                            else origin </> (_path e)))
         f :: T.FileDetail -> Html
         f e = do

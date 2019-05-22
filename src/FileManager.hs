@@ -43,14 +43,21 @@ listFiles path = f $ securePath path
 --                                 traverse parentDir $ l
 --   where f l = 
 
+-- listDirWithPrev pp = (if pp /= ""
+--                       then (Path ".." Dir :)
+--                       else id ) <$> H.listDir True pp
+
+
 listTree :: Path -> IO (Tree Path)
 listTree p@(Path{H.path=path, H.filetype=t}) = case t of
   Dir -> do
-    l <- H.listDir True path
-    l <- mapM listTree l
+    l <- listDir True path >>= mapM listTree
+    
     return $ Node p' l
   File -> return $ Leaf p'
   where p' = Path{H.path= path, H.filetype=t}
+
+
 
 computeState :: Path -> IO FileDetail
 computeState p@(Path{H.path=path, H.filetype=t}) = do

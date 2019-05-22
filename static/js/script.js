@@ -1,6 +1,6 @@
 (function(window,$){
 	Vue.use(VueResource);
-	// Vue.use(VueRouter);
+	Vue.use(VueRouter);
 	
 	// const store = new Vuex.store({
 	// 	state:{
@@ -75,7 +75,10 @@
 				// Object.keys(o).forEach(k => self.data[k] = o[k])
 				self.data.filelist = o.files;
 				self.data.deviceSpaceInfo = o.space;
-				self.data.currentPath = o.datapath;
+				// self.data.currentPath = o.datapath;
+				Vue.set(self.data, "currentPath", o.datapath);
+				console.log("current path:");
+				console.log(self.data.currentPath);
 				self.data.refreshing = false;
 
 			}, response => {
@@ -107,6 +110,12 @@
 
 	function set_upload_file(event){
 		Vue.set(self.data, 'file_to_upload', event.target.files[0]);
+	}
+
+	function dirname(a){
+		a = a.split('/');
+		a.pop();
+		return( a.join('/') );
 	}
 	
 	function start_upload() {
@@ -189,7 +198,21 @@
 		upld(0);
 	};
 
-
+	function fileAction(file){
+		if(file.filetype.type==='Dir'){
+			// console.log("updating with :");
+			// console.log(file);
+			// console.log(file.path);
+			// if(file.path === "bbb"){
+				update(file.path);
+			// }
+		}else{
+			window.open(
+				"?path=" + mkfullpath(file.path),
+				'_blank'
+			);
+		}
+	};
 	
 	this.methods = {
 		prettyBytes: function(b){
@@ -209,15 +232,10 @@
 		addpathspaces: function(p){
 			return p.split('/').join(' / ');
 		},
-		fileAction: function(file){
-			if(file.filetype.type==='Dir'){
-				update(file.path);
-			}else{
-				window.open(
-					"?path=" + mkfullpath(file.path),
-					'_blank'
-				);
-			}
+		fileAction: fileAction,
+		previousPath: function(){
+			fileAction({ filetype: 'Dir',
+						 path:dirname(self.data.currentPath) });
 		},
 		createFolder: function(){
 			name = mkfullpath( self.data.new_folder_name );
@@ -239,11 +257,22 @@
 		start_upload: start_upload
 		
 	};
-	
+
+	var router = new VueRouter({
+		mode: 'history',
+		routes: []
+	});
 	const app = new Vue({
+		router,
 		el: '#app',
 		data: self.data,
-		methods: self.methods
+		methods: self.methods,
+		created: function() {
+			path = this.$route.query.path;
+			console.log("ROUTE path:");
+			console.log(path);
+			self.data.currentPath = path;
+		}
 
 		// router
 	});

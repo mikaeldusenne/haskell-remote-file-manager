@@ -70,10 +70,12 @@ jss = do
   jquery
   bootstrapJs
   mapM js [
-    "https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.10/vue.js",
+    -- "https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.10/vue.js",
+    "https://unpkg.com/vue/dist/vue.js",
     "http://unpkg.com/portal-vue",
     "//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.js",
     "https://cdnjs.cloudflare.com/ajax/libs/vue-resource/1.5.1/vue-resource.min.js",
+    "https://unpkg.com/vue-router/dist/vue-router.js",
     "js/script.js"]
   uploaderjs
   script $ "document.addEventListener('DOMContentLoaded', init)"
@@ -133,7 +135,7 @@ rootRoute = do
             let pct = pcent spc
             let pc = T.PageContent{
                   monitor       = Monitor.monitor spc pct,
-                  T.details     = detailsfs [] "",
+                  T.details     = detailsfs [] path,
                   T.currentPath = H.span ! class_ "navbar-text" $ "/ {{addpathspaces(currentPath)}}",
                   token         = token}
                   -- where f s = "/ " ++ (concatWith " / " $ splitOn (=='/') s)
