@@ -20,6 +20,10 @@
 	
 	var self = this;
 
+
+	self.stripPath = path => path.replace(/^\//, "").replace(/\/$/, "");
+
+	
 	this.same_string = (sa, sb) => {
 		var f = s => s.replace(/ /g,"");
 		return f(sa) == f(sb);
@@ -37,7 +41,8 @@
 		refreshing: true,
 
 		show_new_folder: false,
-		new_folder_name: ""
+		new_folder_name: "",
+		selectedItem: null,
 
 	};
 	
@@ -49,44 +54,100 @@
 
 
 	function mkfullpath(path){
-		if( path === ".." ){
+		if(path === undefined){
+			return("");
+		}else if( path === ".." ){
 			fullpath = self.data.currentPath.split('/');
 			fullpath.pop(-1);
 			fullpath = fullpath.join('/');
 		}else {
-			fullpath = [self.data.currentPath, path].filter(e => e.length).join('/');
+			if(isfull(path)){
+				fullpath = path;
+			}else{
+				fullpath = [self.data.currentPath, path].filter(e => e.length).join('/');
+			}
 		}
+		console.log("mkfullpath  " + fullpath);
 		return fullpath;
 	}
-	
-	this.update = function(path=""){
-		console.log("update");
-		self.data.refreshing = true;
-		// self.reset_data_values();
-		var fullpath = mkfullpath(path);
-		
 
-		// console.log(fullpath);
+	var isfull = function(p){
+		var f = e => e.split('/')[0];
+		return p==="" || f(self.data.currentPath) == f(p);
+	};
+	
+	this.update_status = function(path=undefined){
+		console.log("status called with:" + path);
+		if(path===undefined) path = self.data.currentPath;
+		console.log("pathhhh status : " + path);
+		var fullpath = mkfullpath(path);
+		console.log("so the fullpath is : " + fullpath);
 		
-		Vue.http.get('/api/all/', {params: {path: fullpath}})
+		return getWithPath('/api/status/', fullpath)
 			.then(response => {
 				var o = JSON.parse(response.bodyText);
-				console.log(o);
-				// Object.keys(o).forEach(k => self.data[k] = o[k])
-				self.data.filelist = o.files;
 				self.data.deviceSpaceInfo = o.space;
-				// self.data.currentPath = o.datapath;
 				Vue.set(self.data, "currentPath", o.datapath);
-				console.log("current path:");
-				console.log(self.data.currentPath);
-				self.data.refreshing = false;
-
+				Vue.set(self.data, 'selectedItem', undefined);
+				console.log("Update status: setting current path to: " + o.datapath);
 			}, response => {
 				console.log("error while updating data");
 				console.log(response);
 			});
-		
 	};
+	
+	this.update = function(path=undefined){
+		if(path===undefined) path = self.data.currentPath;
+		console.log('update ===> ' + path);
+		var fullpathorig = mkfullpath(path);
+		console.log('updateee ORIG -=-=->' + fullpathorig);
+		
+		self.update_status(path=fullpathorig)
+			.then( function(){
+				console.log("pathhhh updt : " + path);
+				console.log("update after status");
+				self.data.refreshing = true;
+				// self.reset_data_values();
+				console.log("path ORIG from update filedetail after status update: " + fullpathorig);
+				
+				
+				getWithPath('/api/files/', fullpathorig).then(response => {
+						var o = JSON.parse(response.bodyText);
+						console.log(o);
+						Vue.set(self.data, "filelist", o.files);
+						self.data.refreshing = false;
+						console.log(fullpathorig);
+						
+					}, response => {
+						console.log("error while updating data");
+						console.log(response);
+					});
+			});
+	};
+
+
+	var getWithPath = (url, path) => Vue.http.get(url, {params:{
+		path: self.stripPath(path)}});
+	
+	function fileDownload(file){
+
+		window.open(
+			"/api/download/?path=" + stripPath(mkfullpath(file.path)),
+			'_blank'
+		);
+
+		// getWithPath('/api/download', file.path).then(
+		// 	function(success){
+		// 		console.log("Download of " + file.path + "ok");
+		// 	},
+		// 	function(error){
+		// 		console.log("Error with download of " + file.path + "!");
+		// 		console.log(error);
+		// 	}
+		// );
+	};
+
+	
 
 	// // Routing
 	// const routes = [
@@ -117,11 +178,34 @@
 		a.pop();
 		return( a.join('/') );
 	}
+
+	var basename = function(a){
+		// console.log(a);
+		// return a.split('/').pop();
+		if(a === ""){
+			return "";
+		}else{
+			return a.split('/').pop();
+		}
+
+	};
+	
+	var prettybasename = function(a){
+		// console.log('*****************************************');
+		// console.log(a);
+		if(a === "" || a === "/"){
+			return "home";
+		}else{
+			return a.split('/').pop();
+		}
+	};
+	
+	
 	
 	function start_upload() {
 		event.preventDefault();
-		var file = self.data.file_to_upload;
-
+		
+		var file = self.data.file_to_upload;		
 		if(file === null) return;
 
 		console.log("starting the upload of:");
@@ -137,15 +221,6 @@
 		var f_upload_progress = function( data ) {
 			console.log("progress");
 			console.log(data);
-			// var size_done = start + slice_size;
-			// var percent_done = Math.floor( ( size_done / file.size ) * 100 );
-
-			// if ( next_slice < file.size ) {
-			// 	$( '#upload-progress' ).html( 'Uploading File - ' + percent_done + '%' );
-			// 	upload_file( next_slice );
-			// } else {
-			// 	$( '#upload-progress' ).html( 'Upload Complete!<button onclick="toggle_visibility_upload()" class="btn btn-light btn-sm mx-2">ok</button>' );
-			// }
 		};
 		
 		toggle_visibility_upload();
@@ -154,11 +229,11 @@
 
 			d = {
 				file_data: event.target.result,
-				file: file.name,
+				file:  mkfullpath(file.name),
 				file_type: file.type,
-				first_chunk: (start - slice_size - 1 === 0)
+				path: self.currentPath,
+				first_chunk: (start - slice_size - 1 === 0) // for append mode or not
 			};
-			// d = file;
 			console.log(d);
 			Vue.http.post('api/fileupload',
 						  body=d,
@@ -198,14 +273,13 @@
 		upld(0);
 	};
 
+	function cd(path){
+		update(path);
+	}
+	
 	function fileAction(file){
 		if(file.filetype.type==='Dir'){
-			// console.log("updating with :");
-			// console.log(file);
-			// console.log(file.path);
-			// if(file.path === "bbb"){
-				update(file.path);
-			// }
+			update(file.path);
 		}else{
 			window.open(
 				"?path=" + mkfullpath(file.path),
@@ -215,6 +289,16 @@
 	};
 	
 	this.methods = {
+		isFile: e => e.filetype.type === 'File',
+		isDir: e => e.filetype.type === 'Dir',
+		isSelected: file => file.path == self.data.selectedItem,
+		selectItem: function(which){
+			console.log("select " + which);
+			already = self.data.selectedItem;
+			next = which === already ? undefined : which;
+			
+			Vue.set(self.data, 'selectedItem', next);
+		},
 		prettyBytes: function(b){
 			var byte_units = ["kB","MB","GB","TB"];
 			function f(k, l){
@@ -229,13 +313,15 @@
 			return(f(b, byte_units));
 		},
 		update: self.update,
+		cd: cd,
+		update_status: self.update_status,
 		addpathspaces: function(p){
 			return p.split('/').join(' / ');
 		},
 		fileAction: fileAction,
+		fileDownload: fileDownload,
 		previousPath: function(){
-			fileAction({ filetype: 'Dir',
-						 path:dirname(self.data.currentPath) });
+			cd('..');
 		},
 		createFolder: function(){
 			name = mkfullpath( self.data.new_folder_name );
@@ -250,37 +336,80 @@
 					function(error){
 						console.log("error creating folder");
 						console.log(error);
-					});
+					}).then(self.update());
 		},
 		mkfullpath: mkfullpath,
 		set_upload_file: set_upload_file,
-		start_upload: start_upload
+		start_upload: start_upload,
+		dirname: dirname,
+		basename: basename,
+		prettybasename: prettybasename,
 		
 	};
 
 	var router = new VueRouter({
 		mode: 'history',
-		routes: []
+		routes: [],
+
 	});
+
+	// router.afterEach((to, from) => {
+	// 	console.log("hash change: " + from.path + " -> " + to.path);
+	// 	self.update(to.path);
+	// });
+	
 	const app = new Vue({
 		router,
 		el: '#app',
 		data: self.data,
+		computed: {
+			currentpathBar: function(){
+				console.log('current path from BAR ----------:' + self.data.currentPath);
+				p = self.data.currentPath.split('/');
+				console.log(p);
+				console.log([...Array(p.length).keys()].map(n => p.slice(0,n+1)));
+				ans = ( [...Array(p.length).keys()]
+						.map(n => p.slice(0,n+1))
+						.map(a => a.join('/')));
+				console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  " + ans);
+				if(ans[0].length>0){
+					console.log('PREPEND');
+					ans.unshift("");
+					console.log('ppp');
+					console.log(ans);
+				}
+				console.log(ans);
+				return ans;
+				
+			}
+		},
 		methods: self.methods,
 		created: function() {
 			path = this.$route.query.path;
-			console.log("ROUTE path:");
-			console.log(path);
-			self.data.currentPath = path;
+			if(path !== undefined){
+				console.log("ROUTE path:");
+				self.data.currentPath = path;
+			}
+		},
+		watch: {
+			'$route' (to, from) {
+				console.log("hash change---> " + from.path + " -> " + to.path);
+				self.update(to.path);
+			}
 		}
-
 		// router
 	});
 	
 	// debug
 	window.data = data;
 
-	this.update();
+	// console.log(router.currentRoute);
+//	setTimeout(() => {
+		p = router.currentRoute.path;
+		console.log(p);
+		self.data.currentPath = p;
+		this.update(p);
+//	}, 1000);
 
 })(window,jQuery);
 

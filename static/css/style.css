@@ -1,3 +1,32 @@
 .navbar-text{
 	color: rgba(255,255,255,1) !important;
 }
+
+.folder::after{
+	content: '/';
+	color:#007bff;
+}
+
+.selected{
+	background-color:#c7e3fa;
+}
+
+.file{
+	cursor: pointer;
+}
+
+.file a{
+	color: black;
+}
+.file a:link{
+	color: black;
+}
+.file a:visited{
+	color: black;
+}
+.file a:active{
+	color: black;
+}
+.file a:hover{
+	color: #444;
+}

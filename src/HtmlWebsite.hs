@@ -2,6 +2,7 @@
 module HtmlWebsite where
 
 import Lib
+import List
 
 import qualified Text.Blaze.Html5 as H
 import Text.Blaze.Html5 hiding (main)
@@ -10,22 +11,31 @@ import Text.Blaze.Html5.Attributes as A
 import qualified Data.Text.Lazy as L
 import qualified Text.Blaze.Bootstrap as HB
 
+import Text.Blaze.Html5.Attributes
 
 elemt e st cl = e ! A.style st ! class_ cl
 div' = elemt H.div ""
 
-vfor  e s      = e ! customAttribute "v-for" s
-vbind  e s      = e ! customAttribute "v-bind" s
-vchange      = customAttribute "@change"
-vif = customAttribute "v-if"
-vclick = customAttribute "v-on:click"
-vmodel = customAttribute "v-model"
+ca = customAttribute
+
+vfor    = ca "v-for"
+vbind   = ca "v-bind"
+vchange = ca "@change"
+vif     = ca "v-if"
+vclick  = ca "v-on:click"
+vmodel  = ca "v-model" 
+vclass :: AttributeValue -> Attribute
+vclass  = ca "v-bind:class"
+
+vfor' fore forl = vfor for'
+  where for' = preEscapedToValue $ "(" ++ fore ++ ",index) in " ++ forl
+
+vlink action text = H.a ! href "#" ! vclick action $ text
 
 vifelse :: AttributeValue -> Html -> Html -> Html
 vifelse cond a b = do
   a ! vif cond
   b ! vif ("!"<>cond)
-ca = customAttribute
 
 
 alertBootstrap :: AttributeValue -> Html -> Html

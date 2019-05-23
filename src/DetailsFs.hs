@@ -43,11 +43,24 @@ detailsfs l origin = HB.row $
                      ul ! A.style "width:100%;" ! class_ "list-group" $ do
   lii "list-group-item" ! A.id "li-new-folder" ! vif "show_new_folder" $ inputNewFolder
   -- mapM_ f $ l
-  li ! vif "currentPath.length > 0" ! class_ "list-group-item" $ do
-    H.a ! href "#" ! ca "v-on:click" "previousPath()" $ ".."
+  li ! class_ "folder list-group-item" ! vif "currentPath.length > 0" $ do
+    vlink "previousPath()" ".."
 
-  li `vfor` "file in filelist" ! class_ "list-group-item" $ do
-    H.a ! href "#" ! ca "v-on:click" "fileAction(file)" $ "{{file.path}}"
+  li ! vfor' "file" "filelist" ! vclass "{selected: isSelected(file)}" !
+    class_ "item list-group-item" !
+    vclass "folderClass" !
+    -- vclass "file.path==selecteditem?'selected':'not-selected'" !
+    ca "@click.self" "selectItem(file.path)" $ do
+    vifelse "(isDir(file))"
+      (vlink "fileAction(file)" "{{file.path}}")
+      (H.span "{{file.path}}")
+      
+    div' "float-right" $ do
+      -- H.div ! vif "isSelected(file)" $ do
+      H.span ! vclick "fileDownload(file)" ! class_ "m-2" $ iconic "data-transfer-download" ! class_   "  " ! vif "isSelected(file)"
+      H.span ! class_ "m-2" $ iconic "delete" ! vif "isSelected(file)"
+      H.span ! class_ " badge m-2 badge-secondary" $ "{{prettyBytes(file.size)}}"
+      
 
   
   where lii cl = li ! class_ (cl<>" d-flex justify-content-between align-items-center")
@@ -65,7 +78,7 @@ detailsfs l origin = HB.row $
               (++suff) 
               $ _path e
             H.div ! class_ "d-flex flex-row-reverse" $ do
-              H.span ! class_ "badge badge-primary badge-pill" $ toHtml $
+              H.span ! class_ "badge badge-secondary" $ toHtml $
                 prettyBytes $ (_size e `Prelude.div` 1)
               if _filetype e == File then mempty else H.span ! class_ "badge badge-secondary" $ do
               -- H.span ! class_ "glyphicon glyphicon-download" $ ""

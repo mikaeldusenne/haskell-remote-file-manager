@@ -41,6 +41,7 @@ dependencies:
 - bytestring
 - directory
 - lens
+- temporary
 
 library:
   source-dirs: src

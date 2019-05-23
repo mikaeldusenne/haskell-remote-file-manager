@@ -15,6 +15,7 @@ import Control.Lens
 
 
 -- replace with normalize
+securePath :: String -> String
 securePath ee
   | beginWith "/" ee || (any (beginWith "..") $ splitPath ee) = ""
   | otherwise = ee

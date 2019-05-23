@@ -5,7 +5,7 @@ import Web.Spock hiding (body)
 import qualified Web.Spock as W
 import Web.Spock.Config
 import qualified Text.Blaze.Html5 as H
-import Text.Blaze.Html5 hiding (main)
+import Text.Blaze.Html5 hiding (main, map)
 import qualified Text.Blaze.Html.Renderer.Text as R
 import Text.Blaze.Html5.Attributes as A
 import qualified Data.Text.Lazy as L
@@ -25,42 +25,22 @@ import qualified Monitor
 import Types as T
 import System.FilePath.Posix
 import HtmlWebsite
+import Control.Monad
 
+-- statusBarCurrentPath path = div' "navbar-text" $ case path of
+--   "" -> H.text "/"
+--   path -> do  
+--     let l = splitPath path
+--     div' "navbar-text" $ 
+--       mapM_ f (scanl (++) "" l)
+--       where f e = do
+--               H.text " / "
+--               vlink "actionFolder(filetype.type)" (H.toHtml $ basename e)
 
--- uploader :: Html
--- uploader = do -- H.div ! class_ "row" $ do
---   elemt H.form "" "" $ do
---     div' "from-row" $ do
---       div' "col-auto my-1" $
---        H.span ! class_ "navbar-text" ! A.id "upload-progress" $ do
---          "Please select a file and click \"Upload\"."
---       div' "col-auto my-1" $
---        input ! class_ "form-control-file "
---          ! A.id "file-upload-field" ! type_ "file" ! name "file_upload"
---       div' "col-auto my-1" $
---         button ! class_ "btn btn-light form-control btn-sm"! A.id "file-upload-submit" ! type_ "submit" $ "Upload"
-
-
--- uploaderjs = do
---   script ! src "js/uploader.js" $ mempty
-
--- uploader :: Html
--- uploader = do -- H.div ! class_ "row" $ do
---   elemt H.form "width:20%" "" $ do
---     div' "from-row align-items-center" $ do
---       div' "col-xs-3 my-1" $
---        H.span ! class_ "navbar-text" ! A.id "upload-progress" $ do
---          "Please select a file and click \"Upload\"."
---       div' "col-xs-3 my-1" $
---        input ! class_ "form-control-file "
---          ! A.id "file-upload-field" ! type_ "file" ! name "file_upload"
---       div' "col-xs-3 my-1" $
---         button ! class_ "form-control btn-sm"! A.id "file-upload-submit" ! type_ "submit" ! class_ "btn btn-secondary mb-2" $ "Upload"
-
-
--- uploaderjs = do
---   script ! src "js/uploader.js" $ mempty
-
+statusBarCurrentPath = div' "navbar-text" ! A.id "curent-path" $
+  H.span ! vfor "path in currentpathBar" $ do
+  H.text " / "
+  vlink "cd(path)" "{{prettybasename(path)}}"
 
 actionbar :: Html
 actionbar = do -- H.div ! class_ "row" $ do

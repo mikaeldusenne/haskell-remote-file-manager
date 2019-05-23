@@ -6,8 +6,9 @@ import Control.Monad (forM_)
 import Web.Spock hiding (body)
 import qualified Web.Spock as W
 import Web.Spock.Config
-import qualified Text.Blaze.Html5 as H
-import Text.Blaze.Html5 hiding (main, map)
+-- import qualified Text.Blaze.Html5 as H
+import Text.Blaze.Html5 as H hiding (main, map, docType, docTypeHtml)
+import qualified Text.Blaze.Html5 as H (docTypeHtml)
 import qualified Text.Blaze.Html.Renderer.Text as R
 import Text.Blaze.Html5.Attributes as A
 import qualified Data.Text.Lazy as L
@@ -25,7 +26,8 @@ import qualified Data.Text as Txt
 import GHC.Generics
 import Data.Aeson
 import Data.IORef
-import Control.Lens hiding (element, Empty)
+import Control.Lens hiding (element, Empty, (<.>))
+import System.IO.Temp
 
 import Trees
 import List
@@ -62,8 +64,8 @@ csss = do
   bootstrapCss
   mapM css [
     "//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.css",
-    "css/style.css",
-    "open-iconic/font/css/open-iconic-bootstrap.css"
+    "/open-iconic/font/css/open-iconic-bootstrap.css",
+    "/css/style.css"
     ]
 
 jss = do
@@ -76,16 +78,16 @@ jss = do
     "//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.js",
     "https://cdnjs.cloudflare.com/ajax/libs/vue-resource/1.5.1/vue-resource.min.js",
     "https://unpkg.com/vue-router/dist/vue-router.js",
-    "js/script.js"]
-  uploaderjs
-  script $ "document.addEventListener('DOMContentLoaded', init)"
+    "/js/script.js"]
+  -- uploaderjs
+  -- script $ "document.addEventListener('DOMContentLoaded', init)"
 
 
 -- webpage :: [p] -> Html
 -- webpage :: Foldable t => t a -> Html
 -- webpage :: (Foldable t, ToMarkup a) => t a -> Html
 webpage :: PageContent -> Html
-webpage pc = docTypeHtml $ do
+webpage pc = H.docTypeHtml $ do
   H.head $ do
     csss
     H.title ""
@@ -94,13 +96,13 @@ webpage pc = docTypeHtml $ do
       nav ! class_ "navbar navbar-dark bg-primary fixed-top " $ do
         -- H.div ! class_ "container" $ do
         vifelse "refreshing"
-          (div' "" "")
+          (do
+              div' "" "loading..."
+              div' "" "loading...")
           ( do
               T.monitor pc
               T.currentPath pc
           )
-        
-        
         actionbar
          
          
@@ -119,12 +121,18 @@ webpage pc = docTypeHtml $ do
 --   fs <- liftIO $ listFiles
 --   detailsfs fs
 
+updateState = do
+  state <- getState
+  liftIO $ do
+    newst <- genState
+    atomicModifyIORef' state (\_ -> (newst,()))
+
 rootRoute = do
     path <- securePath . just_or_default "" <$> W.param "path"
     token <- liftIO genToken
     liftIO $ print $ "root route: accessing <" <> path <> ">"
     spc <- liftIO free
-
+    
     let action = do
           let fullpath = directory </> path
           isfile <- liftIO $ (isRegularFile <$> getFileStatus fullpath)
@@ -136,7 +144,7 @@ rootRoute = do
             let pc = T.PageContent{
                   monitor       = Monitor.monitor spc pct,
                   T.details     = detailsfs [] path,
-                  T.currentPath = H.span ! class_ "navbar-text" $ "/ {{addpathspaces(currentPath)}}",
+                  T.currentPath = statusBarCurrentPath,
                   token         = token}
                   -- where f s = "/ " ++ (concatWith " / " $ splitOn (=='/') s)
   
@@ -148,25 +156,18 @@ newFolderRoute = do
     W.body >>= liftIO . print
     e <- securePath . folderpath <$> jsonBody'
     liftIO . print $ e
+    liftIO . print $ directory </> e
     liftIO $ createDirectory $ directory </> e
+    updateState
     W.json $ UplPrg "ok"
+
+  
 
 fileUploadRoute = do
     liftIO $ print "upload"
-    -- W.param' "test" >>= liftIO . putStrLn
-    -- W. >>= liftIO . print
     e <- jsonBody'
     liftIO $ print $ ("@@@@@@@@", T.file e, first_chunk e)
-    
-    -- W.files >>= liftIO . print
-    -- W.body >>= liftIO . print
-    -- W.paramsPost >>= liftIO . print
-    -- W.paramsGet >>= liftIO . print
-    -- W.params >>= liftIO . print
-    -- filename <- W.param' "file"
-    -- liftIO $ print $ filename
 
-    -- ddd <- tail . dropWhile (/=',') <$> (W.param' "file_data" :: AppAction () String)
     let ddd = tail . dropWhile (/=',') $ file_data e
     let dd = BS64.decode . BSC8.pack $ ddd
         mode = if first_chunk e then BS.writeFile else BS.appendFile
@@ -174,47 +175,84 @@ fileUploadRoute = do
                Left error -> liftIO $ do
                  print $ ddd
                  print $ "ERROR     " ++ error ++ "     ERROR"
+    updateState
     W.json $ UplPrg "ok data received"
 
+statusRoute = do
+  ppp <- W.body
+  liftIO $ print $ "statusroute -->> " ++ show ppp
+  p <- (\case
+          Just ee -> securePath ee
+          Nothing -> ""
+      ) <$> W.param "path"
+  liftIO $ print $ "api call status for path <" <> p <> ">"
+  spc <- liftIO free
+  W.json $ Data {
+    space    = spc,
+    T.files  = [],
+    datapath = p
+    }
+
+filesRoute = do
+  p <- (\case
+          Just ee -> securePath ee
+          Nothing -> ""
+      ) <$> W.param "path"
+  liftIO $ print $ "api call files for path <" <> p <> ">"
+  state <- getState >>= (liftIO . (runState <$>) . readIORef)
+  let fs = findTreeByPath p state
+      children = case fs of Nothing -> []
+                            Just (Leaf _) -> []
+                            Just (Node e l) -> map treeValue l
+  -- liftIO $ print children
+  W.json $ Data {
+    space    = Space 0 0,
+    T.files  = map (path %~ basename) $ children,
+    datapath = p
+    }
 
 
-allRoute = do
-    p <- (\case
-            Just ee -> securePath ee
-            Nothing -> ""
-        ) <$> W.param "path"
-    liftIO $ print $ "api call path <" <> p <> ">"
-    
-    
-    state <- getState >>= (liftIO . (runState <$>) . readIORef)
-    let fs = findTreeByPath p state
-        children = case fs of Nothing -> []
-                              Just (Leaf _) -> []
-                              Just (Node e l) -> map treeValue l
-    -- fs <- liftIO $ FileManager.listFiles path
-
-    
-    spc <- liftIO free
-    W.json $ Data {
-      space    = spc,
-      T.files  = map (path %~ basename) $ children, -- fmap (over (path . treeValue) basename) children,
-      datapath = p
-      }
+downloadRoute ::
+  ActionCtxT ctx (WebStateM AppDb AppSession (IORef StateApp)) b
+downloadRoute = do
+  path <- securePath . just_or_default "" <$> W.param "path"
+  liftIO $ print $ "Dowbloading <" <> path <> ">"
+  let fullpath = directory </> path
+  isfile <- liftIO $ (isRegularFile <$> getFileStatus fullpath)
+  
+  W.setHeader "Content-disposition" (Txt.pack $ "attachment; filename="<>basename path<>if isfile then "" else ".zip")
+  if isfile
+    then W.file "" fullpath
+    else
+    (liftIO $ createTempDirectory "/tmp" "haskellfs") >>=
+    (\tmpdir -> do
+        let zippath = tmpdir </> basename fullpath <.> "zip"
+        liftIO $ do
+          (exec''' "zip" ["-r", zippath, path ] directory)
+          print $ tmpdir <.> "zip"
+        liftIO $ fsize zippath >>= print
+        W.file "" $ zippath)
 
 
 app :: AppM
 app = do
   middleware $ staticPolicy (addBase "static")
-  get ("/") rootRoute
   post ("api/newfolder") $ newFolderRoute
+  get ("api/status") $ statusRoute
+  get ("api/files") $ filesRoute
   post ("api/fileupload") $ fileUploadRoute
-  get "api/all" $ allRoute
+  get ("api/download") $ downloadRoute
+  get ("/") rootRoute
+  hookAny GET (\_ -> rootRoute)
+
+  -- get "api/all" $ allRoute
     
+genState = listTree (Path directory Dir) >>= ((StateApp <$>) .  traverse computeState )
 
 main :: IO ()
 main = do
   print "main"
-  st <- listTree (Path directory Dir) >>= ((StateApp <$>) .  traverse computeState )
+  st <- genState
   -- print st
   let -- aaa :: Tree FileDetail
       -- aaa = over (T.path . treeValue) basename $ runState $ st
