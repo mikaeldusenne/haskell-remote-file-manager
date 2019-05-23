@@ -36,7 +36,7 @@
 		deviceSpaceInfo: {avail:0, used: 0},
 
 		file_to_upload: null,
-		upload_status: '',
+		upload_progress: '',
 		show_progress_upload: false,
 		refreshing: true,
 
@@ -223,7 +223,7 @@
 			console.log(data);
 		};
 		
-		toggle_visibility_upload();
+		// toggle_visibility_upload();
 		var upload_chunk = function(start, event){
 			if ( event.target.readyState !== FileReader.DONE ) return; // ????
 
@@ -248,13 +248,13 @@
 						Math.floor( ( size_done / file.size ) * 100 ),
 						100);
 					console.log(percent_done);
-					Vue.set(self.data, 'upload_status', percent_done + '% uploaded');
+					Vue.set(self.data, 'upload_progress', percent_done + '% uploaded');
 					upld(start);
 				}, function(error){
 					console.log("ajax upload error");
 					console.log(error);
 					upld(start - slice_size - 1);
-					Vue.set(self.data, 'upload_status', 'Error Uploading File');
+					Vue.set(self.data, 'upload_progress', 'Error Uploading File');
 				});
 		};
 

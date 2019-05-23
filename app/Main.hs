@@ -229,8 +229,7 @@ downloadRoute = do
         let zippath = tmpdir </> basename fullpath <.> "zip"
         liftIO $ do
           (exec''' "zip" ["-r", zippath, path ] directory)
-          print $ tmpdir <.> "zip"
-        liftIO $ fsize zippath >>= print
+          print $ zippath
         W.file "" $ zippath)
 
 
