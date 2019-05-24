@@ -57,8 +57,10 @@ detailsfs l origin = HB.row $
       
     div' "float-right" $ do
       -- H.div ! vif "isSelected(file)" $ do
-      H.span ! vclick "fileDownload(file)" ! class_ "m-2" $ iconic "data-transfer-download" ! class_   "  " ! vif "isSelected(file)"
-      H.span ! class_ "m-2" $ iconic "delete" ! vif "isSelected(file)"
+      let f click icon = H.span ! vclick click ! class_ "m-2" $
+            iconic icon ! class_   "  " ! vif "isSelected(file)" 
+      f "fileDownload(file)" "data-transfer-download"
+      f "fileDelete(file)" "delete"
       H.span ! class_ " badge m-2 badge-secondary" $ "{{prettyBytes(file.size)}}"
       
 

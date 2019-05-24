@@ -46,13 +46,13 @@ actionbar :: Html
 actionbar = do -- H.div ! class_ "row" $ do
   
   H.form ! class_ "form-inline mb-1" ! method "POST" ! ca "onsubmit" "return start_upload();" $ do
-    H.span ! customAttribute "v-if" "show_progress_upload" ! class_ "navbar-text" ! A.id "upload-progress" $ do
-      "{{upload_status}}"
+    -- H.span ! customAttribute "v-if" "show_progress_upload" ! class_ "navbar-text" ! A.id "upload-progress" $ do "{{upload_progress}}"
     H.div ! customAttribute "v-if" "! show_progress_upload" ! A.id "div-input-file" ! class_ "input-group " $ do
       div' "custom-file" $ do
-        input ! vchange "set_upload_file($event)" ! class_ "custom-file-input" ! A.style "color:#eee;"
-          ! A.id "file-upload-field" ! name "file_upload" ! type_ "file" 
-        H.label ! class_ "custom-file-label" ! A.for "file-upload-field" $ "Choose a file"
+        input ! vchange "set_upload_file($event)" !
+          class_ "custom-file-input" ! A.style "color:#eee;" !
+          A.id "file-upload-field" ! name "file_upload" ! type_ "file" ! ca "multiple" mempty
+        H.label ! class_ "custom-file-label" ! A.for "file-upload-field" $ "Choose file(s)"
       div' "input-group-append" $ 
         H.span ! class_ "input-group-text"! customAttribute "v-on:click" "start_upload()" $ "Upload"
     H.span ! class_ "navbar-text mx-2" ! vif "show_progress_upload" $ "{{upload_progress}}"

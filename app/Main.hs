@@ -24,10 +24,13 @@ import qualified Data.ByteString.Char8 as BSC8
 import System.Directory (createDirectory)
 import qualified Data.Text as Txt
 import GHC.Generics
+import Control.Monad
 import Data.Aeson
 import Data.IORef
 import Control.Lens hiding (element, Empty, (<.>))
 import System.IO.Temp
+import Network.HTTP.Types.Status
+import System.Directory
 
 import Trees
 import List
@@ -58,6 +61,9 @@ type Server a = SpockM () () () a
 
 genToken :: IO [Char]
 genToken = return "42"
+
+io ::  IO a -> ActionCtxT () (WebStateM AppDb AppSession (IORef StateApp)) a
+io = liftIO
 
 
 csss = do
@@ -118,28 +124,28 @@ webpage pc = H.docTypeHtml $ do
 
 -- appFs :: String -> Html
 -- appFs dir = do
---   fs <- liftIO $ listFiles
+--   fs <- io $ listFiles
 --   detailsfs fs
 
 updateState = do
   state <- getState
-  liftIO $ do
+  io $ do
     newst <- genState
     atomicModifyIORef' state (\_ -> (newst,()))
 
 rootRoute = do
     path <- securePath . just_or_default "" <$> W.param "path"
-    token <- liftIO genToken
-    liftIO $ print $ "root route: accessing <" <> path <> ">"
-    spc <- liftIO free
+    token <- io genToken
+    io $ print $ "root route: accessing <" <> path <> ">"
+    spc <- io free
     
     let action = do
           let fullpath = directory </> path
-          isfile <- liftIO $ (isRegularFile <$> getFileStatus fullpath)
+          isfile <- io $ (isRegularFile <$> getFileStatus fullpath)
           if isfile
             then W.setHeader "Content-disposition" (Txt.pack $ "attachment; filename="<>basename path) >> W.file "" fullpath
             else do
-            -- fileListing <- (`detailsfs`path) <$> liftIO (FileManager.listFiles path)
+            -- fileListing <- (`detailsfs`path) <$> io (FileManager.listFiles path)
             let pct = pcent spc
             let pc = T.PageContent{
                   monitor       = Monitor.monitor spc pct,
@@ -152,27 +158,27 @@ rootRoute = do
     action
 
 newFolderRoute = do
-    liftIO $ print "new folder"
-    W.body >>= liftIO . print
+    io $ print "new folder"
+    W.body >>= io . print
     e <- securePath . folderpath <$> jsonBody'
-    liftIO . print $ e
-    liftIO . print $ directory </> e
-    liftIO $ createDirectory $ directory </> e
+    io . print $ e
+    io . print $ directory </> e
+    io $ createDirectory $ directory </> e
     updateState
     W.json $ UplPrg "ok"
 
   
 
 fileUploadRoute = do
-    liftIO $ print "upload"
+    io $ print "upload"
     e <- jsonBody'
-    liftIO $ print $ ("@@@@@@@@", T.file e, first_chunk e)
+    io $ print $ ("@@@@@@@@", T.file e, first_chunk e)
 
     let ddd = tail . dropWhile (/=',') $ file_data e
     let dd = BS64.decode . BSC8.pack $ ddd
         mode = if first_chunk e then BS.writeFile else BS.appendFile
-    case dd of Right d -> liftIO $ mode (directory </> T.file e) d
-               Left error -> liftIO $ do
+    case dd of Right d -> io $ mode (directory </> T.file e) d
+               Left error -> io $ do
                  print $ ddd
                  print $ "ERROR     " ++ error ++ "     ERROR"
     updateState
@@ -180,13 +186,13 @@ fileUploadRoute = do
 
 statusRoute = do
   ppp <- W.body
-  liftIO $ print $ "statusroute -->> " ++ show ppp
+  io $ print $ "statusroute -->> " ++ show ppp
   p <- (\case
           Just ee -> securePath ee
           Nothing -> ""
       ) <$> W.param "path"
-  liftIO $ print $ "api call status for path <" <> p <> ">"
-  spc <- liftIO free
+  io $ print $ "api call status for path <" <> p <> ">"
+  spc <- io free
   W.json $ Data {
     space    = spc,
     T.files  = [],
@@ -198,40 +204,65 @@ filesRoute = do
           Just ee -> securePath ee
           Nothing -> ""
       ) <$> W.param "path"
-  liftIO $ print $ "api call files for path <" <> p <> ">"
-  state <- getState >>= (liftIO . (runState <$>) . readIORef)
+  io $ print $ "api call files for path <" <> p <> ">"
+  state <- getState >>= (io . (runState <$>) . readIORef)
   let fs = findTreeByPath p state
       children = case fs of Nothing -> []
                             Just (Leaf _) -> []
                             Just (Node e l) -> map treeValue l
-  -- liftIO $ print children
+  -- io $ print children
   W.json $ Data {
     space    = Space 0 0,
     T.files  = map (path %~ basename) $ children,
     datapath = p
     }
 
+getPath ::
+  ActionCtxT ctx (WebStateM AppDb AppSession (IORef StateApp)) String
+getPath = securePath . just_or_default "" <$> W.param "path"
 
-downloadRoute ::
-  ActionCtxT ctx (WebStateM AppDb AppSession (IORef StateApp)) b
 downloadRoute = do
-  path <- securePath . just_or_default "" <$> W.param "path"
-  liftIO $ print $ "Dowbloading <" <> path <> ">"
+  path <- getPath
+  io $ print $ "Downloading <" <> path <> ">"
   let fullpath = directory </> path
-  isfile <- liftIO $ (isRegularFile <$> getFileStatus fullpath)
+  isfile <- io $ (isRegularFile <$> getFileStatus fullpath)
   
-  W.setHeader "Content-disposition" (Txt.pack $ "attachment; filename="<>basename path<>if isfile then "" else ".zip")
+  W.setHeader "Content-disposition" (Txt.pack $ "attachment; filename="<>basename path<>
+                                     if isfile then "" else ".zip")
   if isfile
     then W.file "" fullpath
     else
-    (liftIO $ createTempDirectory "/tmp" "haskellfs") >>=
+    (io $ createTempDirectory "/tmp" "haskellfs") >>=
     (\tmpdir -> do
         let zippath = tmpdir </> basename fullpath <.> "zip"
-        liftIO $ do
+        io $ do
           (exec''' "zip" ["-r", zippath, path ] directory)
           print $ zippath
         W.file "" $ zippath)
 
+
+deleteRoute = do
+  W.body >>= io . print
+  path <- getPath
+  let fullpath = directory </> path
+  io $ print $ "DeleteRoute <" <> fullpath <> ">"
+  
+  exists <- io $ doesPathExist fullpath
+  if exists then (
+    do
+      io $ do
+        print path
+        exec "trash" ["--rootDir", directory </> "..",
+                       directory </> path] >>= print
+      updateState
+      W.json $ UplPrg "ok file removed")
+    else W.setStatus status400
+    
+    
+    -- ((raise $ "No such file or directory: " ++ path) `when`)
+  
+
+  
 
 app :: AppM
 app = do
@@ -241,6 +272,7 @@ app = do
   get ("api/files") $ filesRoute
   post ("api/fileupload") $ fileUploadRoute
   get ("api/download") $ downloadRoute
+  get ("api/delete") $ deleteRoute
   get ("/") rootRoute
   hookAny GET (\_ -> rootRoute)
 
