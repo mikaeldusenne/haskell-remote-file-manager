@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings, LambdaCase #-}
 module DetailsFs where
 
+
 import Web.Spock hiding (body)
 import qualified Web.Spock as W
 import Web.Spock.Config

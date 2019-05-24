@@ -59,7 +59,7 @@ data AppState = AppState { myAppState :: StateApp }
 type AppSession = ()
 type Server a = SpockM () () () a
 
-genToken :: IO [Char]
+genToken :: IO String
 genToken = return "42"
 
 io ::  IO a -> ActionCtxT () (WebStateM AppDb AppSession (IORef StateApp)) a
