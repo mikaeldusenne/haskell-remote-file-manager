@@ -43,6 +43,7 @@ dependencies:
 - lens
 - temporary
 - http-types
+- users
 
 library:
   source-dirs: src

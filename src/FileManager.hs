@@ -12,7 +12,7 @@ import Params
 import Misc as MS
 import Trees
 import Control.Lens
-
+import Data.List
 
 -- replace with normalize
 securePath :: String -> String

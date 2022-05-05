@@ -226,9 +226,10 @@ downloadRoute = do
   io $ print $ "Downloading <" <> path <> ">"
   let fullpath = directory </> path
   isfile <- io $ (isRegularFile <$> getFileStatus fullpath)
-  
-  W.setHeader "Content-disposition" (Txt.pack $ "attachment; filename="<>basename path<>
-                                     if isfile then "" else ".zip")
+  let cdisp = (Txt.pack $ "inline; filename=\""<>basename path<>
+                                     (if isfile then "" else ".zip")<>"\"")
+  -- io $ print cdisp
+  W.setHeader "Content-disposition" cdisp
   if isfile
     then W.file "" fullpath
     else
