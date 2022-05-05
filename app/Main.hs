@@ -79,11 +79,11 @@ jss = do
   bootstrapJs
   mapM js [
     -- "https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.10/vue.js",
-    "https://unpkg.com/vue/dist/vue.js",
+    "https://unpkg.com/vue@2.6.14",
     "http://unpkg.com/portal-vue",
     "//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.js",
     "https://cdnjs.cloudflare.com/ajax/libs/vue-resource/1.5.1/vue-resource.min.js",
-    "https://unpkg.com/vue-router/dist/vue-router.js",
+    "https://unpkg.com/vue-router@3.5.3",
     "/js/script.js"]
   -- uploaderjs
   -- script $ "document.addEventListener('DOMContentLoaded', init)"
