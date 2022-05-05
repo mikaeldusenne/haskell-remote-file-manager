@@ -52,7 +52,7 @@ listFiles path = f $ securePath path
 listTree :: Path -> IO (Tree Path)
 listTree p@(Path{H.path=path, H.filetype=t}) = case t of
   Dir -> do
-    l <- listDir True path >>= mapM listTree
+    l <- sort <$> listDir True path >>= mapM listTree
     
     return $ Node p' l
   File -> return $ Leaf p'

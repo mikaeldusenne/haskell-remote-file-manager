@@ -1,5 +1,5 @@
 module Params where
 
--- directory="/media/storage/shared"
+directory="/media/stuff/shared/books_n_such"
 -- directory="/home/mika/Downloads"
-directory="/home/mika/tmp/aaa"
+-- directory="/home/mika/tmp/sorare-dashboard"
